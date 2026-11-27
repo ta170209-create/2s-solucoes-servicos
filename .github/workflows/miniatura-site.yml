@@ -1,0 +1,39 @@
+name: Gerar miniatura real do site 2S
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/miniatura-site.yml'
+permissions:
+  contents: write
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Capturar o site real no tamanho de celular
+        run: |
+          python3 -m http.server 8765 >/tmp/2s-http.log 2>&1 &
+          sleep 2
+          node - <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:540,height:850},deviceScaleFactor:2});
+            await page.goto('http://127.0.0.1:8765/',{waitUntil:'networkidle'});
+            await page.screenshot({path:'miniatura-site.png',type:'png',clip:{x:0,y:0,width:540,height:560}});
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - name: Publicar captura sem modificar o site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add miniatura-site.png
+          git commit -m "Adicionar captura real da pagina para compartilhamento" || exit 0
+          git push
