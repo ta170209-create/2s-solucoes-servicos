@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/miniatura-site.yml'
+      - 'index.html'
 permissions:
   contents: write
 jobs:
