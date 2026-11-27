@@ -26,7 +26,14 @@ jobs:
             const browser=await chromium.launch({headless:true});
             const page=await browser.newPage({viewport:{width:540,height:850},deviceScaleFactor:2});
             await page.goto('http://127.0.0.1:8765/',{waitUntil:'networkidle'});
-            await page.screenshot({path:'miniatura-site.png',type:'png',clip:{x:0,y:0,width:540,height:560}});
+            const fs=require('fs');
+            for(const quality of [72,65,55,45,35]){
+              await page.screenshot({path:'miniatura-site-v2.jpg',type:'jpeg',quality,clip:{x:0,y:0,width:540,height:560}});
+              const bytes=fs.statSync('miniatura-site-v2.jpg').size;
+              console.log('JPEG quality',quality,'bytes',bytes);
+              if(bytes<=580000)break;
+            }
+            if(fs.statSync('miniatura-site-v2.jpg').size>580000)throw new Error('Miniatura acima de 580 KB');
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           JS
@@ -34,7 +41,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add miniatura-site.png
-          git commit -m "Adicionar captura real da pagina para compartilhamento" || exit 0
+          git add miniatura-site-v2.jpg
+          git commit -m "Adicionar miniatura JPEG otimizada do site real" || exit 0
           git pull --rebase origin main
           git push origin HEAD:main
